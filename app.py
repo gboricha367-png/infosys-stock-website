@@ -82,5 +82,32 @@ elif page == "Machine Learning Model":
     plt.legend()
     st.pyplot(fig3)
 
+    # 7-Day Future Prediction
+    st.subheader("📅 7-Day Future Prediction")
+
+    last_row = X.tail(1).values
+    future_predictions = []
+
+    for i in range(7):
+        next_pred = model.predict(last_row)[0]
+        future_predictions.append(next_pred)
+
+    future_dates = pd.date_range(
+        start=df.index[-1] + pd.Timedelta(days=1),
+        periods=7
+    )
+
+    future_df = pd.DataFrame({
+        "Date": future_dates,
+        "Predicted Close Price": future_predictions
+    })
+
+    st.write(future_df)
+
+    fig4 = plt.figure(figsize=(10,5))
+    plt.plot(future_df["Date"], future_df["Predicted Close Price"])
+    plt.xticks(rotation=45)
+    st.pyplot(fig4)
+
 st.markdown("---")
 st.markdown("Developed as part of Machine Learning Academic Project.")
