@@ -1,69 +1,91 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+import yfinance as yf
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
-st.set_page_config(page_title="Infosys Stock Prediction", layout="wide")
+st.set_page_config(page_title="Stock Prediction Dashboard", layout="wide")
 
-st.title("📈 Infosys Stock Price Prediction using Machine Learning")
-
+# ----------------------------
 # Sidebar Navigation
+# ----------------------------
 page = st.sidebar.selectbox(
     "Select Page",
     ["Home", "EDA", "Machine Learning Model"]
 )
 
-# Load Data
-df = pd.read_csv("INFY.NS.csv")
-df['Date'] = pd.to_datetime(df['Date'])
-df.set_index('Date', inplace=True)
-df.dropna(inplace=True)
+# ----------------------------
+# Load Data (Infosys)
+# ----------------------------
+@st.cache_data
+def load_data():
+    df = yf.download("INFY.NS", start="2018-01-01", end="2024-12-31")
+    df.dropna(inplace=True)
+    return df
 
-if page == "Project Overview":
-    st.header("Project Overview")
-    st.write("""
-    This project predicts the closing stock price of Infosys Ltd.
-    using Machine Learning (Linear Regression).
+df = load_data()
 
-    Steps followed:
-    - Data Collection
-    - Data Cleaning
-    - Feature Selection
-    - Model Training
-    - Model Evaluation
-    - Visualization
+# ============================
+# HOME PAGE
+# ============================
+if page == "Home":
+    st.title("📈 Stock Price Prediction Dashboard")
+    
+    st.markdown("""
+    ### Project Overview
+    
+    This project uses **Machine Learning (Linear Regression)** 
+    to analyze historical stock price data and predict 
+    the next 7 days closing prices.
+    
+    ### Features:
+    - Exploratory Data Analysis (EDA)
+    - Model Training & Evaluation
+    - Actual vs Predicted Comparison
+    - 7-Day Future Forecast
+    - Download Forecast Option
+    
+    ---
+    
+    ⚠️ Predictions are generated using historical data 
+    and are for academic demonstration purposes only.
     """)
 
-elif page == "Data Visualization":
-    st.header("Historical Data Analysis")
+# ============================
+# EDA PAGE
+# ============================
+elif page == "EDA":
+    st.title("📊 Exploratory Data Analysis")
+
+    st.subheader("Raw Data")
+    st.write(df.tail())
 
     st.subheader("Closing Price Trend")
-    fig1 = plt.figure(figsize=(10,5))
-    plt.plot(df['Close'])
-    plt.title("Closing Price Over Time")
+    fig1, ax1 = plt.subplots(figsize=(10,5))
+    ax1.plot(df.index, df["Close"])
+    ax1.set_title("Historical Closing Price")
+    ax1.set_xlabel("Date")
+    ax1.set_ylabel("Price")
     st.pyplot(fig1)
 
-    st.subheader("50-Day Moving Average")
-    df['MA50'] = df['Close'].rolling(50).mean()
-    fig2 = plt.figure(figsize=(10,5))
-    plt.plot(df['Close'], label="Close")
-    plt.plot(df['MA50'], label="MA50")
-    plt.legend()
+    st.subheader("Volume Trend")
+    fig2, ax2 = plt.subplots(figsize=(10,5))
+    ax2.plot(df.index, df["Volume"])
+    ax2.set_title("Trading Volume")
+    ax2.set_xlabel("Date")
+    ax2.set_ylabel("Volume")
     st.pyplot(fig2)
-    
+
+# ============================
+# MACHINE LEARNING PAGE
+# ============================
 elif page == "Machine Learning Model":
-    import matplotlib.pyplot as plt
-    from sklearn.model_selection import train_test_split
-    from sklearn.linear_model import LinearRegression
-    from sklearn.metrics import mean_squared_error, r2_score
-    import pandas as pd
 
-    st.header("📊 Model Training & Prediction")
+    st.title("🤖 Model Training & Prediction")
 
-    # --- Features & Target ---
+    # Features & Target
     X = df[['Open', 'High', 'Low', 'Volume']]
     y = df['Close']
 
@@ -72,35 +94,35 @@ elif page == "Machine Learning Model":
         X, y, test_size=0.2, shuffle=False
     )
 
-    # Model Training
+    # Model
     model = LinearRegression()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    # --- Model Evaluation ---
+    # Evaluation
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
-    st.subheader("Model Evaluation")
+    st.subheader("📊 Model Evaluation")
     st.write("Mean Squared Error:", round(mse, 4))
     st.write("R² Score:", round(r2, 4))
 
-    # --- Actual vs Predicted Graph ---
+    # Actual vs Predicted Graph
     st.subheader("Actual vs Predicted Prices")
-    fig1 = plt.figure(figsize=(10,5))
-    plt.plot(y_test.values, label="Actual", color="blue")
-    plt.plot(y_pred, label="Predicted", color="red")
-    plt.xlabel("Time Index")
-    plt.ylabel("Price")
-    plt.title("Actual vs Predicted Prices")
-    plt.legend()
-    st.pyplot(fig1)
+    fig3, ax3 = plt.subplots(figsize=(10,5))
+    ax3.plot(y_test.values, label="Actual")
+    ax3.plot(y_pred, label="Predicted")
+    ax3.legend()
+    st.pyplot(fig3)
 
-    # --- 7-Day Future Prediction ---
+    # ----------------------------
+    # 7-Day Future Prediction
+    # ----------------------------
     st.subheader("📅 7-Day Future Prediction")
 
     last_row = X.tail(1).values
     future_predictions = []
+
     for i in range(7):
         next_pred = model.predict(last_row)[0]
         future_predictions.append(next_pred)
@@ -115,51 +137,44 @@ elif page == "Machine Learning Model":
         "Predicted Close Price": future_predictions
     })
 
-    # Show table
     st.write(future_df)
 
+    # Download Button
     st.download_button(
-    label="📥 Download 7-Day Forecast CSV",
-    data=future_df.to_csv(index=False),
-    file_name="7_day_forecast.csv",
-    mime="text/csv"
-)
+        label="📥 Download 7-Day Forecast CSV",
+        data=future_df.to_csv(index=False),
+        file_name="7_day_forecast.csv",
+        mime="text/csv"
+    )
 
-    # --- Metrics Dashboard ---
+    # ----------------------------
+    # Dashboard Metrics
+    # ----------------------------
+    st.subheader("📌 Key Metrics")
     col1, col2, col3, col4 = st.columns(4)
+
     col1.metric("Last Close", round(df['Close'].iloc[-1], 2))
     col2.metric("Highest Close", round(df['Close'].max(), 2))
     col3.metric("Lowest Close", round(df['Close'].min(), 2))
-    col4.metric("7-Day Forecast Avg", round(future_df['Predicted Close Price'].mean(), 2))
+    col4.metric("Forecast Avg", round(future_df['Predicted Close Price'].mean(), 2))
 
-    # --- Combined Historical + Future Graph ---
+    # ----------------------------
+    # Combined Graph
+    # ----------------------------
     st.subheader("📈 Historical + 7-Day Forecast")
-    plt.figure(figsize=(10,5))
 
-    # Historical
-    plt.plot(df.index, df['Close'], label="Historical Close", color="blue")
-    # Forecast
-    plt.plot(future_df["Date"], future_df["Predicted Close Price"], 
-             label="7-Day Forecast", color="orange", linestyle="--")
-    # Today line
-    plt.axvline(df.index[-1], color="gray", linestyle=":", label="Today")
+    fig4, ax4 = plt.subplots(figsize=(10,5))
+    ax4.plot(df.index, df['Close'], label="Historical Close")
+    ax4.plot(future_df["Date"], future_df["Predicted Close Price"], 
+             linestyle="--", label="7-Day Forecast")
+    ax4.axvline(df.index[-1], linestyle=":", label="Today")
 
-    # Labels & legend
-    plt.xlabel("Date")
-    plt.ylabel("Price")
-    plt.title("Historical + 7-Day Forecast")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
-    st.pyplot(plt)
+    ax4.legend()
+    st.pyplot(fig4)
 
-    # --- Academic Explanation (for viva) ---
     st.markdown("""
     **Note:**  
-    - The Linear Regression model is trained on historical features (Open, High, Low, Volume).  
-    - 7-Day forecast uses the last available feature set to predict forward.  
-    - Predictions are static and meant for academic demonstration.  
+    Linear Regression was used to predict future closing prices 
+    based on historical features (Open, High, Low, Volume).  
+    Predictions are static and meant for academic demonstration.
     """)
-
-st.markdown("---")
-st.markdown("Developed as part of Machine Learning Academic Project.")
