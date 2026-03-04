@@ -2,12 +2,25 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
-import numpy as np
 
 st.set_page_config(page_title="Infosys Stock Dashboard", layout="wide")
+
+# ----------------------------
+# SIMPLE STYLING
+# ----------------------------
+st.markdown("""
+<style>
+.stMetric {
+    background-color: #f0f2f6;
+    padding: 15px;
+    border-radius: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.title("📊 Infosys Ltd Stock Market Analysis Dashboard")
 
@@ -27,6 +40,10 @@ if df.empty:
     st.error("No data available. Please try again later.")
     st.stop()
 
+# Add Moving Averages
+df["MA50"] = df["Close"].rolling(50).mean()
+df["MA200"] = df["Close"].rolling(200).mean()
+
 # ----------------------------
 # SIDEBAR
 # ----------------------------
@@ -36,28 +53,54 @@ page = st.sidebar.selectbox(
     ["Home", "Data Overview", "Visualizations", "Machine Learning Model"]
 )
 
-# ----------------------------
-# HOME
-# ----------------------------
+# ============================
+# HOME PAGE
+# ============================
 
 if page == "Home":
-    st.subheader("About Infosys Ltd")
+
+    st.subheader("🏢 About Infosys Ltd")
     st.write("""
-    This dashboard performs historical stock analysis and price prediction 
-    for Infosys Ltd using Linear Regression.
+    Infosys Limited is an Indian multinational IT services and consulting company.
+    This dashboard performs historical analysis and machine learning-based 
+    stock price prediction using Linear Regression.
     """)
 
-# ----------------------------
+    st.markdown("---")
+
+    # Key Metrics
+    latest_close = float(df["Close"].iloc[-1])
+    highest = float(df["High"].max())
+    lowest = float(df["Low"].min())
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Latest Closing Price", round(latest_close, 2))
+    col2.metric("5Y Highest Price", round(highest, 2))
+    col3.metric("5Y Lowest Price", round(lowest, 2))
+
+    st.markdown("---")
+
+    st.subheader("📈 Closing Price with Moving Averages")
+
+    fig_home, ax_home = plt.subplots()
+    ax_home.plot(df.index, df["Close"], label="Close Price")
+    ax_home.plot(df.index, df["MA50"], label="50-Day MA")
+    ax_home.plot(df.index, df["MA200"], label="200-Day MA")
+    ax_home.legend()
+    plt.xticks(rotation=45)
+    st.pyplot(fig_home)
+
+# ============================
 # DATA OVERVIEW
-# ----------------------------
+# ============================
 
 elif page == "Data Overview":
     st.subheader("Recent Stock Data")
-    st.dataframe(df.tail())
+    st.dataframe(df.tail(20))
 
-# ----------------------------
+# ============================
 # VISUALIZATIONS
-# ----------------------------
+# ============================
 
 elif page == "Visualizations":
 
@@ -73,13 +116,13 @@ elif page == "Visualizations":
     plt.xticks(rotation=45)
     st.pyplot(fig2)
 
-# ----------------------------
+# ============================
 # MACHINE LEARNING MODEL
-# ----------------------------
+# ============================
 
 elif page == "Machine Learning Model":
 
-    st.subheader("Model Training & Evaluation")
+    st.subheader("🤖 Model Training & Evaluation")
 
     X = df[['Open', 'High', 'Low', 'Volume']]
     y = df['Close']
@@ -98,28 +141,25 @@ elif page == "Machine Learning Model":
 
     col1, col2 = st.columns(2)
     col1.metric("Mean Squared Error", round(mse, 2))
-    col2.metric("R2 Score", round(r2, 4))
+    col2.metric("R² Score", round(r2, 4))
 
-    # Actual vs Predicted Plot
     st.subheader("Actual vs Predicted Prices")
+
     fig3, ax3 = plt.subplots()
     ax3.plot(y_test.values, label="Actual")
     ax3.plot(y_pred, label="Predicted")
     ax3.legend()
     st.pyplot(fig3)
 
-    # ----------------------------
-    # SAFE 7-DAY FORECAST
-    # ----------------------------
-
+    # 7-Day Forecast
     st.subheader("📅 7-Day Future Prediction")
 
     last_row = X.iloc[-1:].copy()
     future_predictions = []
 
     for _ in range(7):
-        pred_array = model.predict(last_row)
-        pred_value = np.squeeze(pred_array)   # <-- SAFELY extract scalar
+        pred = model.predict(last_row)
+        pred_value = np.squeeze(pred)
         future_predictions.append(float(pred_value))
 
     future_dates = pd.date_range(
