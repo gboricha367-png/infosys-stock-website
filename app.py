@@ -160,7 +160,6 @@ elif page == "Machine Learning Model":
     col1.metric("Last Close", round(df['Close'].iloc[-1], 2))
     col2.metric("Highest Close", round(df['Close'].max(), 2))
     col3.metric("Lowest Close", round(df['Close'].min(), 2))
-    col4.metric("Forecast Avg", round(future_df['Predicted Close Price'].mean(), 2))
 
     # ----------------------------
     # Combined Graph
@@ -171,6 +170,7 @@ elif page == "Machine Learning Model":
     ax4.plot(df.index, df['Close'], label="Historical Close")
     ax4.plot(future_df["Date"], future_df["Predicted Close Price"], 
              linestyle="--", label="7-Day Forecast")
+     col4.metric("Forecast Avg", round(future_df['Predicted Close Price'].mean(), 2))
     ax4.axvline(df.index[-1], linestyle=":", label="Today")
 
     ax4.legend()
