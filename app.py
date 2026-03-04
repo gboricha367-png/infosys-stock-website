@@ -160,7 +160,6 @@ elif page == "Machine Learning Model":
     - 7-Day forecast uses the last available feature set to predict forward.  
     - Predictions are static and meant for academic demonstration.  
     """)
-    st.pyplot(fig4)
 
 st.markdown("---")
 st.markdown("Developed as part of Machine Learning Academic Project.")
