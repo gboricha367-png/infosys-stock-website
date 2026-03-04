@@ -12,8 +12,8 @@ st.title("📈 Infosys Stock Price Prediction using Machine Learning")
 
 # Sidebar Navigation
 page = st.sidebar.selectbox(
-    "Select Section",
-    ["Project Overview", "Data Visualization", "Machine Learning Model"]
+    "Select Page",
+    ["Home", "EDA", "Machine Learning Model"]
 )
 
 # Load Data
