@@ -21,11 +21,15 @@ page = st.sidebar.selectbox(
 # ----------------------------
 @st.cache_data
 def load_data():
-    df = yf.download("INFY.NS", start="2018-01-01", end="2024-12-31")
+    df = yf.download("INFY.NS", period="5y")
     df.dropna(inplace=True)
     return df
 
 df = load_data()
+
+if df.empty:
+    st.error("No data available. Please try again later.")
+    st.stop()
 
 # ============================
 # HOME PAGE
