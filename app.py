@@ -5,6 +5,7 @@ import yfinance as yf
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np
 
 st.set_page_config(page_title="Infosys Stock Dashboard", layout="wide")
 
@@ -44,12 +45,6 @@ if page == "Home":
     st.write("""
     This dashboard performs historical stock analysis and price prediction 
     for Infosys Ltd using Linear Regression.
-    
-    Features:
-    - Historical Data Display
-    - Price Visualization
-    - Model Evaluation
-    - 7-Day Forecast
     """)
 
 # ----------------------------
@@ -68,13 +63,13 @@ elif page == "Visualizations":
 
     st.subheader("Closing Price Over Time")
     fig1, ax1 = plt.subplots()
-    ax1.plot(df.index, df["Close"].astype(float))
+    ax1.plot(df.index, df["Close"])
     plt.xticks(rotation=45)
     st.pyplot(fig1)
 
     st.subheader("Trading Volume Over Time")
     fig2, ax2 = plt.subplots()
-    ax2.plot(df.index, df["Volume"].astype(float))
+    ax2.plot(df.index, df["Volume"])
     plt.xticks(rotation=45)
     st.pyplot(fig2)
 
@@ -86,8 +81,8 @@ elif page == "Machine Learning Model":
 
     st.subheader("Model Training & Evaluation")
 
-    X = df[['Open', 'High', 'Low', 'Volume']].astype(float)
-    y = df['Close'].astype(float)
+    X = df[['Open', 'High', 'Low', 'Volume']]
+    y = df['Close']
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=False
@@ -102,30 +97,30 @@ elif page == "Machine Learning Model":
     r2 = r2_score(y_test, y_pred)
 
     col1, col2 = st.columns(2)
-    col1.metric("Mean Squared Error", round(float(mse), 2))
-    col2.metric("R2 Score", round(float(r2), 4))
+    col1.metric("Mean Squared Error", round(mse, 2))
+    col2.metric("R2 Score", round(r2, 4))
 
     # Actual vs Predicted Plot
     st.subheader("Actual vs Predicted Prices")
     fig3, ax3 = plt.subplots()
-    ax3.plot(y_test.values.astype(float), label="Actual")
-    ax3.plot(y_pred.astype(float), label="Predicted")
+    ax3.plot(y_test.values, label="Actual")
+    ax3.plot(y_pred, label="Predicted")
     ax3.legend()
     st.pyplot(fig3)
 
     # ----------------------------
-    # 7 DAY FORECAST (STABLE VERSION)
+    # SAFE 7-DAY FORECAST
     # ----------------------------
 
     st.subheader("📅 7-Day Future Prediction")
 
-    last_row = X.tail(1)
-
+    last_row = X.iloc[-1:].copy()
     future_predictions = []
 
     for _ in range(7):
-        prediction = model.predict(last_row)[0]
-        future_predictions.append(float(prediction))
+        pred_array = model.predict(last_row)
+        pred_value = np.squeeze(pred_array)   # <-- SAFELY extract scalar
+        future_predictions.append(float(pred_value))
 
     future_dates = pd.date_range(
         start=df.index[-1] + pd.Timedelta(days=1),
@@ -140,9 +135,11 @@ elif page == "Machine Learning Model":
     st.dataframe(future_df)
 
     fig4, ax4 = plt.subplots()
-    ax4.plot(future_df["Date"], future_df["Predicted Close Price"].astype(float))
+    ax4.plot(future_df["Date"], future_df["Predicted Close Price"])
     plt.xticks(rotation=45)
     st.pyplot(fig4)
 
-    avg_forecast = float(future_df["Predicted Close Price"].mean())
-    st.metric("Average 7-Day Forecast Price", round(avg_forecast, 2))
+    st.metric(
+        "Average 7-Day Forecast Price",
+        round(future_df["Predicted Close Price"].mean(), 2)
+    )
