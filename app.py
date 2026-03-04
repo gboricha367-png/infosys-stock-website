@@ -53,6 +53,7 @@ elif page == "Data Visualization":
     plt.plot(df['MA50'], label="MA50")
     plt.legend()
     st.pyplot(fig2)
+    
 elif page == "Machine Learning Model":
     import matplotlib.pyplot as plt
     from sklearn.model_selection import train_test_split
@@ -116,6 +117,13 @@ elif page == "Machine Learning Model":
 
     # Show table
     st.write(future_df)
+
+    st.download_button(
+    label="📥 Download 7-Day Forecast CSV",
+    data=future_df.to_csv(index=False),
+    file_name="7_day_forecast.csv",
+    mime="text/csv"
+)
 
     # --- Metrics Dashboard ---
     col1, col2, col3, col4 = st.columns(4)
