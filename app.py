@@ -30,9 +30,12 @@ st.title("📊 Infosys Ltd Stock Market Analysis Dashboard")
 
 @st.cache_data
 def load_data():
-    df = yf.download("INFY.NS", period="5y")
-    df.dropna(inplace=True)
-    return df
+    try:
+        df = yf.download("INFY.NS", period="5y", progress=False)
+        df.dropna(inplace=True)
+        return df
+    except:
+        return pd.DataFrame()
 
 df = load_data()
 
