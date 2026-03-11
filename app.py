@@ -9,31 +9,32 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 st.set_page_config(page_title="Infosys Stock Dashboard", layout="wide")
 
-# ---------------- LOGIN ----------------
+# LOGIN SYSTEM
 
 USERNAME = "admin"
 PASSWORD = "infosys123"
 
 if "logged_in" not in st.session_state:
-st.session_state.logged_in = False
+    st.session_state.logged_in = False
+
 
 if not st.session_state.logged_in:
 
-```
-st.title("Stock Analytics Platform")
+    st.title("Stock Analytics Platform")
 
-username = st.text_input("Username")
-password = st.text_input("Password", type="password")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
-if st.button("Login"):
-    if username == USERNAME and password == PASSWORD:
-        st.session_state.logged_in = True
-        st.success("Login successful")
-        st.rerun()
-    else:
-        st.error("Invalid username or password")
+    if st.button("Login"):
 
-st.stop()
+        if username == USERNAME and password == PASSWORD:
+            st.session_state.logged_in = True
+            st.rerun()
+
+        else:
+            st.error("Invalid username or password")
+
+    st.stop()
 ```
 
 # ---------------- STYLE ----------------
