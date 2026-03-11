@@ -9,11 +9,11 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 st.set_page_config(page_title="Infosys Stock Dashboard", layout="wide")
 
-# -----------------------
+# ----------------------------
 
 # LOGIN SYSTEM
 
-# -----------------------
+# ----------------------------
 
 USERNAME = "admin"
 PASSWORD = "infosys123"
@@ -25,7 +25,6 @@ if not st.session_state.logged_in:
 
 ```
 st.title("Stock Analytics Platform")
-
 st.write("Login to access the dashboard")
 
 username = st.text_input("Username")
@@ -36,17 +35,18 @@ if st.button("Login"):
     if username == USERNAME and password == PASSWORD:
         st.session_state.logged_in = True
         st.rerun()
+
     else:
-        st.error("Invalid credentials")
+        st.error("Invalid username or password")
 
 st.stop()
 ```
 
-# -----------------------
+# ----------------------------
 
-# MODERN UI STYLE
+# STYLING
 
-# -----------------------
+# ----------------------------
 
 st.markdown("""
 
@@ -58,10 +58,6 @@ background-color:#f6f8fb;
 
 h1,h2,h3 {
 color:#1e293b;
-}
-
-.block-container {
-padding-top:2rem;
 }
 
 .metric-card{
@@ -77,11 +73,11 @@ box-shadow:0px 2px 6px rgba(0,0,0,0.05);
 
 st.title("Infosys Stock Analytics Dashboard")
 
-# -----------------------
+# ----------------------------
 
 # LOAD DATA
 
-# -----------------------
+# ----------------------------
 
 @st.cache_data
 def load_data():
@@ -95,17 +91,17 @@ return df
 
 df = load_data()
 
-# indicators
+# Indicators
 
 df["MA20"] = df["Close"].rolling(20).mean()
 df["MA50"] = df["Close"].rolling(50).mean()
 df["MA200"] = df["Close"].rolling(200).mean()
 
-# -----------------------
+# ----------------------------
 
-# STOCK SUMMARY
+# SUMMARY METRICS
 
-# -----------------------
+# ----------------------------
 
 latest_close = float(df["Close"].iloc[-1])
 previous_close = float(df["Close"].iloc[-2])
@@ -118,27 +114,21 @@ low_52 = df["Low"].rolling(252).min().iloc[-1]
 
 volume = df["Volume"].iloc[-1]
 
-# -----------------------
-
-# DASHBOARD METRICS
-
-# -----------------------
-
 col1, col2, col3, col4, col5 = st.columns(5)
 
 col1.metric("Price", round(latest_close,2), f"{round(change,2)} ({round(pct_change,2)}%)")
 col2.metric("52 Week High", round(high_52,2))
 col3.metric("52 Week Low", round(low_52,2))
 col4.metric("Volume", int(volume))
-col5.metric("Market Trend","Bullish" if change>0 else "Bearish")
+col5.metric("Trend","Bullish" if change > 0 else "Bearish")
 
 st.markdown("---")
 
-# -----------------------
+# ----------------------------
 
-# TABS LIKE TRADING APPS
+# TABS
 
-# -----------------------
+# ----------------------------
 
 tab1, tab2, tab3, tab4 = st.tabs(
 [
@@ -149,11 +139,11 @@ tab1, tab2, tab3, tab4 = st.tabs(
 ]
 )
 
-# =============================
+# ============================
 
-# OVERVIEW TAB
+# OVERVIEW
 
-# =============================
+# ============================
 
 with tab1:
 
@@ -180,21 +170,20 @@ with col2:
 
     st.subheader("Company Information")
 
-    st.write("""
+    st.write(
+    """
+    Infosys Limited is an Indian multinational IT services and consulting company.
+    This dashboard analyzes historical stock data and uses machine learning
+    techniques to predict future closing prices.
+    """
+    )
 ```
 
-Infosys Limited is an Indian multinational IT company that provides
-business consulting, IT services and outsourcing.
-
-This dashboard performs stock analysis using historical market
-data and applies machine learning techniques for price prediction.
-""")
-
-# =============================
+# ============================
 
 # TECHNICAL CHARTS
 
-# =============================
+# ============================
 
 with tab2:
 
@@ -224,11 +213,11 @@ plt.xticks(rotation=45)
 st.pyplot(fig3)
 ```
 
-# =============================
+# ============================
 
 # DATA TAB
 
-# =============================
+# ============================
 
 with tab3:
 
@@ -238,11 +227,11 @@ st.subheader("Historical Data")
 st.dataframe(df.tail(50))
 ```
 
-# =============================
+# ============================
 
-# MACHINE LEARNING
+# MACHINE LEARNING MODEL
 
-# =============================
+# ============================
 
 with tab4:
 
@@ -253,41 +242,42 @@ X = df[['Open','High','Low','Volume']]
 y = df['Close']
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X,y,test_size=0.2,shuffle=False
+    X, y, test_size=0.2, shuffle=False
 )
 
 model = LinearRegression()
-model.fit(X_train,y_train)
+model.fit(X_train, y_train)
 
 predictions = model.predict(X_test)
 
-mse = mean_squared_error(y_test,predictions)
-r2 = r2_score(y_test,predictions)
+mse = mean_squared_error(y_test, predictions)
+r2 = r2_score(y_test, predictions)
 
-col1,col2 = st.columns(2)
+col1, col2 = st.columns(2)
 
-col1.metric("Model Error (MSE)",round(mse,2))
-col2.metric("Model Accuracy (R2)",round(r2,4))
+col1.metric("Model Error (MSE)", round(mse,2))
+col2.metric("Model Accuracy (R²)", round(r2,4))
 
 st.subheader("Actual vs Predicted")
 
 fig4, ax4 = plt.subplots()
 
-ax4.plot(y_test.values,label="Actual")
-ax4.plot(predictions,label="Predicted")
+ax4.plot(y_test.values, label="Actual")
+ax4.plot(predictions, label="Predicted")
 
 ax4.legend()
 
 st.pyplot(fig4)
 
-st.subheader("Next Day Prediction")
+# Next Day Prediction
+st.subheader("Next Day Closing Price Prediction")
 
 latest_data = X.tail(1)
-
 next_day = model.predict(latest_data)
 
 st.metric("Predicted Closing Price", round(float(next_day[0]),2))
 
+# 7 Day Forecast
 st.subheader("7 Day Forecast")
 
 last_row = X.iloc[-1:].copy()
@@ -300,20 +290,20 @@ for i in range(7):
     future_predictions.append(float(pred))
 
 future_dates = pd.date_range(
-    start=df.index[-1]+pd.Timedelta(days=1),
+    start=df.index[-1] + pd.Timedelta(days=1),
     periods=7
 )
 
 forecast_df = pd.DataFrame({
-"Date":future_dates,
-"Predicted Price":future_predictions
+    "Date": future_dates,
+    "Predicted Price": future_predictions
 })
 
 st.dataframe(forecast_df)
 
 fig5, ax5 = plt.subplots()
 
-ax5.plot(forecast_df["Date"],forecast_df["Predicted Price"])
+ax5.plot(forecast_df["Date"], forecast_df["Predicted Price"])
 
 plt.xticks(rotation=45)
 
