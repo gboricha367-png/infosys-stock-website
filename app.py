@@ -9,19 +9,19 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 st.set_page_config(page_title="Infosys Stock Dashboard", layout="wide")
 
-# ----------------------------
+# -----------------------
 
 # LOGIN SYSTEM
 
-# ----------------------------
+# -----------------------
 
 USERNAME = "admin"
 PASSWORD = "infosys123"
 
 if "logged_in" not in st.session_state:
-st.session_state.logged_in = False
+st.session_state["logged_in"] = False
 
-if not st.session_state.logged_in:
+if st.session_state["logged_in"] == False:
 
 ```
 st.title("Stock Analytics Platform")
@@ -30,10 +30,12 @@ st.write("Login to access the dashboard")
 username = st.text_input("Username")
 password = st.text_input("Password", type="password")
 
-if st.button("Login"):
+login_button = st.button("Login")
+
+if login_button:
 
     if username == USERNAME and password == PASSWORD:
-        st.session_state.logged_in = True
+        st.session_state["logged_in"] = True
         st.rerun()
 
     else:
@@ -42,52 +44,38 @@ if st.button("Login"):
 st.stop()
 ```
 
-# ----------------------------
+# -----------------------
 
 # STYLING
 
-# ----------------------------
+# -----------------------
 
 st.markdown("""
 
 <style>
-
 .stApp {
 background-color:#f6f8fb;
 }
-
 h1,h2,h3 {
 color:#1e293b;
 }
-
-.metric-card{
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0px 2px 6px rgba(0,0,0,0.05);
-}
-
 </style>
 
 """, unsafe_allow_html=True)
 
 st.title("Infosys Stock Analytics Dashboard")
 
-# ----------------------------
+# -----------------------
 
 # LOAD DATA
 
-# ----------------------------
+# -----------------------
 
 @st.cache_data
 def load_data():
-
-```
 df = yf.download("INFY.NS", period="5y", progress=False)
 df.dropna(inplace=True)
-
 return df
-```
 
 df = load_data()
 
@@ -97,11 +85,11 @@ df["MA20"] = df["Close"].rolling(20).mean()
 df["MA50"] = df["Close"].rolling(50).mean()
 df["MA200"] = df["Close"].rolling(200).mean()
 
-# ----------------------------
+# -----------------------
 
-# SUMMARY METRICS
+# METRICS
 
-# ----------------------------
+# -----------------------
 
 latest_close = float(df["Close"].iloc[-1])
 previous_close = float(df["Close"].iloc[-2])
@@ -122,28 +110,23 @@ col3.metric("52 Week Low", round(low_52,2))
 col4.metric("Volume", int(volume))
 col5.metric("Trend","Bullish" if change > 0 else "Bearish")
 
-st.markdown("---")
+st.divider()
 
-# ----------------------------
+# -----------------------
 
 # TABS
 
-# ----------------------------
+# -----------------------
 
 tab1, tab2, tab3, tab4 = st.tabs(
-[
-"Overview",
-"Technical Charts",
-"Data",
-"Machine Learning Model"
-]
+["Overview","Technical Charts","Data","Machine Learning Model"]
 )
 
-# ============================
+# -----------------------
 
 # OVERVIEW
 
-# ============================
+# -----------------------
 
 with tab1:
 
@@ -161,7 +144,6 @@ with col1:
     ax.plot(df.index, df["MA50"], label="MA50")
 
     ax.legend()
-
     plt.xticks(rotation=45)
 
     st.pyplot(fig)
@@ -170,20 +152,20 @@ with col2:
 
     st.subheader("Company Information")
 
-    st.write(
-    """
-    Infosys Limited is an Indian multinational IT services and consulting company.
-    This dashboard analyzes historical stock data and uses machine learning
-    techniques to predict future closing prices.
-    """
-    )
+    st.write("""
 ```
 
-# ============================
+Infosys Limited is an Indian multinational IT services and consulting company.
+
+This dashboard analyzes historical stock data and applies machine learning
+to predict future stock prices.
+""")
+
+# -----------------------
 
 # TECHNICAL CHARTS
 
-# ============================
+# -----------------------
 
 with tab2:
 
@@ -197,7 +179,6 @@ ax2.plot(df.index, df["MA50"], label="50 Day MA")
 ax2.plot(df.index, df["MA200"], label="200 Day MA")
 
 ax2.legend()
-
 plt.xticks(rotation=45)
 
 st.pyplot(fig2)
@@ -213,25 +194,24 @@ plt.xticks(rotation=45)
 st.pyplot(fig3)
 ```
 
-# ============================
+# -----------------------
 
-# DATA TAB
+# DATA
 
-# ============================
+# -----------------------
 
 with tab3:
 
 ```
 st.subheader("Historical Data")
-
 st.dataframe(df.tail(50))
 ```
 
-# ============================
+# -----------------------
 
-# MACHINE LEARNING MODEL
+# MACHINE LEARNING
 
-# ============================
+# -----------------------
 
 with tab4:
 
@@ -256,7 +236,7 @@ r2 = r2_score(y_test, predictions)
 col1, col2 = st.columns(2)
 
 col1.metric("Model Error (MSE)", round(mse,2))
-col2.metric("Model Accuracy (R²)", round(r2,4))
+col2.metric("Model Accuracy (R2)", round(r2,4))
 
 st.subheader("Actual vs Predicted")
 
@@ -269,7 +249,6 @@ ax4.legend()
 
 st.pyplot(fig4)
 
-# Next Day Prediction
 st.subheader("Next Day Closing Price Prediction")
 
 latest_data = X.tail(1)
@@ -277,15 +256,12 @@ next_day = model.predict(latest_data)
 
 st.metric("Predicted Closing Price", round(float(next_day[0]),2))
 
-# 7 Day Forecast
 st.subheader("7 Day Forecast")
 
 last_row = X.iloc[-1:].copy()
-
 future_predictions = []
 
 for i in range(7):
-
     pred = model.predict(last_row)
     future_predictions.append(float(pred))
 
@@ -304,7 +280,6 @@ st.dataframe(forecast_df)
 fig5, ax5 = plt.subplots()
 
 ax5.plot(forecast_df["Date"], forecast_df["Predicted Price"])
-
 plt.xticks(rotation=45)
 
 st.pyplot(fig5)
