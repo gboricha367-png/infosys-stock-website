@@ -10,15 +10,54 @@ from sklearn.metrics import mean_squared_error, r2_score
 st.set_page_config(page_title="Infosys Stock Dashboard", layout="wide")
 
 # ----------------------------
-# SIMPLE STYLING
+# LOGIN SYSTEM
 # ----------------------------
+
+USERNAME = "admin"
+PASSWORD = "infosys123"
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+
+    st.title("🔐 Login to Stock Prediction Dashboard")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username == USERNAME and password == PASSWORD:
+            st.session_state.logged_in = True
+            st.success("Login Successful")
+            st.rerun()
+        else:
+            st.error("Invalid Username or Password")
+
+    st.stop()
+
+# ----------------------------
+# STYLING
+# ----------------------------
+
 st.markdown("""
 <style>
-.stMetric {
-    background-color: #f0f2f6;
-    padding: 15px;
-    border-radius: 10px;
+
+.stApp {
+    background-color: #f5f7fb;
 }
+
+h1, h2, h3 {
+    color: #1f4e79;
+}
+
+.stMetric {
+    background-color: white;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e6e6e6;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -43,7 +82,7 @@ if df.empty:
     st.error("No data available. Please try again later.")
     st.stop()
 
-# Add Moving Averages
+# Moving averages
 df["MA50"] = df["Close"].rolling(50).mean()
 df["MA200"] = df["Close"].rolling(200).mean()
 
@@ -62,21 +101,28 @@ page = st.sidebar.selectbox(
 
 if page == "Home":
 
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/9/95/Infosys_logo.svg",
+        width=200
+    )
+
     st.subheader("🏢 About Infosys Ltd")
+
     st.write("""
     Infosys Limited is an Indian multinational IT services and consulting company.
-    This dashboard performs historical analysis and machine learning-based 
-    stock price prediction using Linear Regression.
+
+    This dashboard analyzes historical stock data and applies a Machine Learning 
+    model to predict stock prices using Linear Regression.
     """)
 
     st.markdown("---")
 
-    # Key Metrics
     latest_close = float(df["Close"].iloc[-1])
     highest = float(df["High"].max())
     lowest = float(df["Low"].min())
 
     col1, col2, col3 = st.columns(3)
+
     col1.metric("Latest Closing Price", round(latest_close, 2))
     col2.metric("5Y Highest Price", round(highest, 2))
     col3.metric("5Y Lowest Price", round(lowest, 2))
@@ -91,6 +137,7 @@ if page == "Home":
     ax_home.plot(df.index, df["MA200"], label="200-Day MA")
     ax_home.legend()
     plt.xticks(rotation=45)
+
     st.pyplot(fig_home)
 
 # ============================
@@ -98,7 +145,9 @@ if page == "Home":
 # ============================
 
 elif page == "Data Overview":
+
     st.subheader("Recent Stock Data")
+
     st.dataframe(df.tail(20))
 
 # ============================
@@ -108,15 +157,19 @@ elif page == "Data Overview":
 elif page == "Visualizations":
 
     st.subheader("Closing Price Over Time")
+
     fig1, ax1 = plt.subplots()
     ax1.plot(df.index, df["Close"])
     plt.xticks(rotation=45)
+
     st.pyplot(fig1)
 
     st.subheader("Trading Volume Over Time")
+
     fig2, ax2 = plt.subplots()
     ax2.plot(df.index, df["Volume"])
     plt.xticks(rotation=45)
+
     st.pyplot(fig2)
 
 # ============================
@@ -143,26 +196,51 @@ elif page == "Machine Learning Model":
     r2 = r2_score(y_test, y_pred)
 
     col1, col2 = st.columns(2)
+
     col1.metric("Mean Squared Error", round(mse, 2))
     col2.metric("R² Score", round(r2, 4))
 
     st.subheader("Actual vs Predicted Prices")
 
     fig3, ax3 = plt.subplots()
+
     ax3.plot(y_test.values, label="Actual")
     ax3.plot(y_pred, label="Predicted")
+
     ax3.legend()
+
     st.pyplot(fig3)
 
-    # 7-Day Forecast
+    # ----------------------------
+    # NEXT DAY PREDICTION
+    # ----------------------------
+
+    st.subheader("📅 Next Day Closing Price Prediction")
+
+    latest_data = X.tail(1)
+
+    next_day_prediction = model.predict(latest_data)
+
+    st.metric(
+        "Predicted Next Day Closing Price",
+        f"₹ {round(float(next_day_prediction[0]),2)}"
+    )
+
+    # ----------------------------
+    # 7 DAY FORECAST
+    # ----------------------------
+
     st.subheader("📅 7-Day Future Prediction")
 
     last_row = X.iloc[-1:].copy()
     future_predictions = []
 
     for _ in range(7):
+
         pred = model.predict(last_row)
+
         pred_value = np.squeeze(pred)
+
         future_predictions.append(float(pred_value))
 
     future_dates = pd.date_range(
@@ -178,8 +256,11 @@ elif page == "Machine Learning Model":
     st.dataframe(future_df)
 
     fig4, ax4 = plt.subplots()
+
     ax4.plot(future_df["Date"], future_df["Predicted Close Price"])
+
     plt.xticks(rotation=45)
+
     st.pyplot(fig4)
 
     st.metric(
