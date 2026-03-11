@@ -69,6 +69,7 @@ def load_data():
     return df
 
 df = load_data()
+df["Volume"] = pd.to_numeric(df["Volume"], errors="coerce")
 
 # ---------------- INDICATORS ----------------
 
