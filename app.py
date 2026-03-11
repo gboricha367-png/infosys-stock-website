@@ -9,34 +9,25 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 st.set_page_config(page_title="Infosys Trading Dashboard", layout="wide")
 
-# ---------------- STYLE ----------------
-
+# ---------- STYLE ----------
 st.markdown("""
 <style>
 body {
-    background-color:#ffe6f2;
+background-color:#ffe6f2;
 }
-
 .stMetric {
-    background-color:#ffcce6;
-    padding:20px;
-    border-radius:12px;
-    text-align:center;
+background-color:#ffcce6;
+padding:15px;
+border-radius:10px;
+text-align:center;
 }
-
 h1, h2, h3 {
-    color:#cc0066;
+color:#cc0066;
 }
-
-.sidebar .sidebar-content {
-    background-color:#ffd6eb;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- LOGIN ----------------
-
+# ---------- LOGIN ----------
 USERNAME = "admin"
 PASSWORD = "infosys123"
 
@@ -45,7 +36,7 @@ if "logged_in" not in st.session_state:
 
 if st.session_state.logged_in == False:
 
-    st.title("Infosys Stock Dashboard Login")
+    st.title("Infosys Dashboard Login")
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -60,29 +51,37 @@ if st.session_state.logged_in == False:
 
     st.stop()
 
-# ---------------- LOAD DATA ----------------
-
+# ---------- DATA ----------
 @st.cache_data
 def load_data():
+
     df = yf.download("INFY.NS", period="5y", progress=False)
+
+    df = df.reset_index()
+
+    df = df[["Date","Open","High","Low","Close","Volume"]]
+
+    df["Open"] = df["Open"].astype(float)
+    df["High"] = df["High"].astype(float)
+    df["Low"] = df["Low"].astype(float)
+    df["Close"] = df["Close"].astype(float)
+    df["Volume"] = df["Volume"].astype(float)
+
     df.dropna(inplace=True)
+
     return df
 
 df = load_data()
-df["Volume"] = pd.to_numeric(df["Volume"], errors="coerce")
 
-# ---------------- INDICATORS ----------------
-
+# ---------- INDICATORS ----------
 df["MA20"] = df["Close"].rolling(20).mean()
 df["MA50"] = df["Close"].rolling(50).mean()
 df["Daily Return"] = df["Close"].pct_change()
 
-# ---------------- TITLE ----------------
-
+# ---------- TITLE ----------
 st.title("Infosys Stock Analytics Dashboard")
 
-# ---------------- METRICS ----------------
-
+# ---------- METRICS ----------
 latest_price = float(df["Close"].iloc[-1])
 previous_price = float(df["Close"].iloc[-2])
 
@@ -101,15 +100,14 @@ col4.metric("52 Week Low", round(low_52,2))
 
 st.divider()
 
-# ---------------- PRICE CHART ----------------
-
+# ---------- PRICE CHART ----------
 st.subheader("Price Trend with Moving Averages")
 
 fig1, ax1 = plt.subplots()
 
-ax1.plot(df.index, df["Close"], label="Close Price")
-ax1.plot(df.index, df["MA20"], label="20 Day MA")
-ax1.plot(df.index, df["MA50"], label="50 Day MA")
+ax1.plot(df["Date"], df["Close"], label="Close Price")
+ax1.plot(df["Date"], df["MA20"], label="20 Day MA")
+ax1.plot(df["Date"], df["MA50"], label="50 Day MA")
 
 ax1.legend()
 
@@ -119,13 +117,12 @@ st.pyplot(fig1)
 
 st.divider()
 
-# ---------------- VOLUME ----------------
-
+# ---------- VOLUME ----------
 st.subheader("Trading Volume")
 
 fig2, ax2 = plt.subplots()
 
-ax2.bar(df.index, df["Volume"])
+ax2.bar(df["Date"], df["Volume"])
 
 plt.xticks(rotation=45)
 
@@ -133,13 +130,12 @@ st.pyplot(fig2)
 
 st.divider()
 
-# ---------------- RETURNS ----------------
-
+# ---------- RETURNS ----------
 st.subheader("Daily Returns")
 
 fig3, ax3 = plt.subplots()
 
-ax3.plot(df.index, df["Daily Return"])
+ax3.plot(df["Date"], df["Daily Return"])
 
 plt.xticks(rotation=45)
 
@@ -147,11 +143,10 @@ st.pyplot(fig3)
 
 st.divider()
 
-# ---------------- MACHINE LEARNING ----------------
+# ---------- MACHINE LEARNING ----------
+st.subheader("Machine Learning Prediction")
 
-st.subheader("Machine Learning Price Prediction")
-
-X = df[["Open", "High", "Low", "Volume"]]
+X = df[["Open","High","Low","Volume"]]
 y = df["Close"]
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -174,14 +169,13 @@ col2.metric("Model Accuracy (R²)", round(r2,4))
 
 st.divider()
 
-# ---------------- ACTUAL VS PREDICTED ----------------
-
+# ---------- ACTUAL VS PREDICTED ----------
 st.subheader("Actual vs Predicted Price")
 
 fig4, ax4 = plt.subplots()
 
-ax4.plot(y_test.values, label="Actual Price")
-ax4.plot(predictions, label="Predicted Price")
+ax4.plot(y_test.values, label="Actual")
+ax4.plot(predictions, label="Predicted")
 
 ax4.legend()
 
@@ -189,14 +183,13 @@ st.pyplot(fig4)
 
 st.divider()
 
-# ---------------- NEXT DAY PREDICTION ----------------
-
+# ---------- NEXT DAY PREDICTION ----------
 st.subheader("Next Day Closing Price Prediction")
 
 next_day_features = X.tail(1)
 
 next_day_prediction = model.predict(next_day_features)
 
-predicted_price = float(next_day_prediction.flatten()[0])
+predicted_price = float(np.array(next_day_prediction).flatten()[0])
 
 st.metric("Predicted Next Closing Price", round(predicted_price,2))
