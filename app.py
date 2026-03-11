@@ -123,4 +123,6 @@ st.subheader("Next Day Prediction")
 next_day_features = X.tail(1)
 next_day_prediction = model.predict(next_day_features)
 
-st.metric("Predicted Next Closing Price", round(float(next_day_prediction[0]),2))
+predicted_price = float(next_day_prediction.flatten()[0])
+
+st.metric("Predicted Next Closing Price", round(predicted_price, 2))
